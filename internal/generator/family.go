@@ -1,0 +1,87 @@
+package generator
+
+import (
+	"math/rand/v2"
+)
+
+// FamilyRegistry holds pre-generated families and provides random selection.
+type FamilyRegistry struct {
+	families []Family
+	rng      *rand.Rand
+}
+
+// familySizeDist defines the distribution of family sizes.
+// 2-person: 15%, 3-person: 25%, 4-person: 40%, 5-person: 15%, 6-10: 5%
+var familySizeDist = []struct {
+	size   int
+	weight int
+}{
+	{2, 15},
+	{3, 25},
+	{4, 40},
+	{5, 15},
+}
+// 6-10 person families get the remaining 5%
+
+// NewFamilyRegistry creates a registry with the given number of families.
+func NewFamilyRegistry(count int, rng *rand.Rand) *FamilyRegistry {
+	families := make([]Family, count)
+	customerID := int64(1)
+
+	for i := 0; i < count; i++ {
+		size := pickFamilySize(rng)
+		members := make([]int64, size)
+		for j := 0; j < size; j++ {
+			members[j] = customerID
+			customerID++
+		}
+		families[i] = Family{
+			ID:      int64(i + 1),
+			Members: members,
+		}
+	}
+
+	return &FamilyRegistry{
+		families: families,
+		rng:      rng,
+	}
+}
+
+func pickFamilySize(rng *rand.Rand) int {
+	r := rng.IntN(100)
+	cumulative := 0
+	for _, d := range familySizeDist {
+		cumulative += d.weight
+		if r < cumulative {
+			return d.size
+		}
+	}
+	// Remaining 5%: 6-10 person families
+	return 6 + rng.IntN(5) // 6..10
+}
+
+// RandomFamily returns a random family from the registry.
+func (fr *FamilyRegistry) RandomFamily() *Family {
+	idx := fr.rng.IntN(len(fr.families))
+	return &fr.families[idx]
+}
+
+// RandomMember returns a random member from the given family.
+func (fr *FamilyRegistry) RandomMember(f *Family) int64 {
+	idx := fr.rng.IntN(len(f.Members))
+	return f.Members[idx]
+}
+
+// Count returns the number of families in the registry.
+func (fr *FamilyRegistry) Count() int {
+	return len(fr.families)
+}
+
+// TotalMembers returns the total number of members across all families.
+func (fr *FamilyRegistry) TotalMembers() int {
+	total := 0
+	for i := range fr.families {
+		total += len(fr.families[i].Members)
+	}
+	return total
+}
