@@ -1,0 +1,38 @@
+kafka:
+  brokers:
+    - "kafka:9092"
+  topic: "usage-events"
+  acks: 1
+  batchSize: 65536
+  lingerMs: 5
+  bufferMemory: 67108864
+  compressionType: "lz4"
+  maxBlockMs: 60000
+
+simulation:
+  mode: "constant"
+  tps: 5000
+  workerCount: 0
+
+  families:
+    count: 250000
+    maxMembers: 10
+
+  rampUp:
+    startTps: 1000
+    targetTps: 10000
+    durationSeconds: 300
+
+  burst:
+    baseTps: 5000
+    burstTps: 50000
+    burstDurationSeconds: 10
+    intervalSeconds: 60
+
+server:
+  controlPort: 8080
+  metricsPort: 9090
+
+logging:
+  level: "info"
+  format: "json"

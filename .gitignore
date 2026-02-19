@@ -1,0 +1,32 @@
+# Binaries
+simulator-usage
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Output
+*.out
+coverage.out
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+/bin/
+/dist/
+
+# Env
+.env
+.env.local
