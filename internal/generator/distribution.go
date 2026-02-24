@@ -1,7 +1,6 @@
 package generator
 
 import (
-	"fmt"
 	"math/rand/v2"
 )
 
@@ -121,7 +120,23 @@ func PickNetworkType(rng *rand.Rand) string {
 	return "4G"
 }
 
-// GenerateDeviceID creates a device identifier.
+// deviceModels lists realistic device model names.
+var deviceModels = []string{
+	"pixel_9",
+	"pixel_8",
+	"pixel_7",
+	"galaxy_s24",
+	"galaxy_s23",
+	"galaxy_a54",
+	"galaxy_z_flip5",
+	"iphone_15",
+	"iphone_14",
+	"iphone_se",
+	"xperia_1_v",
+	"v60_thinq",
+}
+
+// GenerateDeviceID creates a device identifier using a real device model name.
 func GenerateDeviceID(rng *rand.Rand) string {
-	return fmt.Sprintf("device_%06x", rng.IntN(0xFFFFFF+1))
+	return "device_" + deviceModels[rng.IntN(len(deviceModels))]
 }

@@ -101,11 +101,20 @@ func TestPickNetworkTypeDistribution(t *testing.T) {
 
 func TestGenerateDeviceID(t *testing.T) {
 	rng := rand.New(rand.NewPCG(42, 0))
-	id := GenerateDeviceID(rng)
-	if !strings.HasPrefix(id, "device_") {
-		t.Errorf("device ID %q doesn't start with 'device_'", id)
-	}
-	if len(id) != len("device_")+6 {
-		t.Errorf("device ID %q has unexpected length %d", id, len(id))
+	for i := 0; i < 100; i++ {
+		id := GenerateDeviceID(rng)
+		if !strings.HasPrefix(id, "device_") {
+			t.Errorf("device ID %q doesn't start with 'device_'", id)
+		}
+		found := false
+		for _, model := range deviceModels {
+			if id == "device_"+model {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("device ID %q is not from known device models", id)
+		}
 	}
 }

@@ -35,7 +35,6 @@ func (g *EventGenerator) generateFor(familyID, customerID int64) EventEnvelope {
 	deviceID := GenerateDeviceID(g.rng)
 
 	envelopeID := uuid.New().String()
-	payloadID := "evt_" + uuid.New().String()
 
 	// Java LocalDateTime format: no timezone
 	ts := time.Now().Format("2006-01-02T15:04:05.000")
@@ -45,7 +44,6 @@ func (g *EventGenerator) generateFor(familyID, customerID int64) EventEnvelope {
 		EventType: "DATA_USAGE",
 		Timestamp: ts,
 		Payload: UsagePayload{
-			EventID:    payloadID,
 			FamilyID:   familyID,
 			CustomerID: customerID,
 			AppID:      appID,
