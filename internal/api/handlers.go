@@ -3,6 +3,8 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/dabom/simulator-usage/internal/generator"
 )
 
 type handler struct {
@@ -11,13 +13,14 @@ type handler struct {
 
 // StatusResponse is returned by GET /status.
 type StatusResponse struct {
-	Running        bool   `json:"running"`
-	Mode           string `json:"mode"`
-	CurrentTPS     int    `json:"currentTps"`
-	TargetTPS      int    `json:"targetTps"`
-	TotalPublished int64  `json:"totalPublished"`
-	TotalFailed    int64  `json:"totalFailed"`
-	UptimeSeconds  int64  `json:"uptimeSeconds"`
+	Running           bool   `json:"running"`
+	Mode              string `json:"mode"`
+	CurrentTPS        int    `json:"currentTps"`
+	TargetTPS         int    `json:"targetTps"`
+	TotalPublished    int64  `json:"totalPublished"`
+	TotalFailed       int64  `json:"totalFailed"`
+	UptimeSeconds     int64  `json:"uptimeSeconds"`
+	FixedTargetCount  int    `json:"fixedTargetCount"`
 }
 
 func (h *handler) Health(w http.ResponseWriter, _ *http.Request) {
@@ -142,6 +145,41 @@ func (h *handler) ControlBurst(w http.ResponseWriter, r *http.Request) {
 
 	h.sim.TriggerBurst(req.Count, req.DurationSeconds)
 	writeJSON(w, http.StatusOK, map[string]string{"message": "burst triggered"})
+}
+
+type fixedTargetsRequest struct {
+	Targets []generator.FixedTarget `json:"targets"`
+}
+
+func (h *handler) UpdateFixedTargets(w http.ResponseWriter, r *http.Request) {
+	var req fixedTargetsRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+		return
+	}
+	if len(req.Targets) == 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "targets must not be empty"})
+		return
+	}
+	for _, t := range req.Targets {
+		if t.FamilyID <= 0 || len(t.CustomerIDs) == 0 {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "each target must have familyId > 0 and at least one customerId"})
+			return
+		}
+	}
+
+	h.sim.SetFixedTargets(req.Targets)
+	writeJSON(w, http.StatusOK, map[string]any{
+		"message":     "fixed targets updated",
+		"targetCount": len(req.Targets),
+	})
+}
+
+func (h *handler) ClearFixedTargets(w http.ResponseWriter, _ *http.Request) {
+	h.sim.ClearFixedTargets()
+	writeJSON(w, http.StatusOK, map[string]string{
+		"message": "fixed targets cleared, returning to random mode",
+	})
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {

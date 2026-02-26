@@ -2,6 +2,7 @@ package generator
 
 import (
 	"math/rand/v2"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -9,8 +10,10 @@ import (
 
 // EventGenerator produces EventEnvelope instances.
 type EventGenerator struct {
-	registry *FamilyRegistry
-	rng      *rand.Rand
+	registry     *FamilyRegistry
+	rng          *rand.Rand
+	fixedTargets []FixedTarget
+	mu           sync.RWMutex
 }
 
 // NewEventGenerator creates a new generator with the given family registry.
@@ -21,8 +24,19 @@ func NewEventGenerator(registry *FamilyRegistry, rng *rand.Rand) *EventGenerator
 	}
 }
 
-// Generate creates a single EventEnvelope with a random family/member.
+// Generate creates a single EventEnvelope.
+// If fixed targets are set, picks from them; otherwise uses random family/member.
 func (g *EventGenerator) Generate() EventEnvelope {
+	g.mu.RLock()
+	targets := g.fixedTargets
+	g.mu.RUnlock()
+
+	if len(targets) > 0 {
+		t := targets[g.rng.IntN(len(targets))]
+		cid := t.CustomerIDs[g.rng.IntN(len(t.CustomerIDs))]
+		return g.generateFor(t.FamilyID, cid)
+	}
+
 	family := g.registry.RandomFamily()
 	customerID := g.registry.RandomMember(family)
 	return g.generateFor(family.ID, customerID)
@@ -59,4 +73,25 @@ func (g *EventGenerator) generateFor(familyID, customerID int64) EventEnvelope {
 // Registry returns the underlying FamilyRegistry.
 func (g *EventGenerator) Registry() *FamilyRegistry {
 	return g.registry
+}
+
+// SetFixedTargets sets fixed family/customer targets. When set, Generate() uses these instead of random selection.
+func (g *EventGenerator) SetFixedTargets(targets []FixedTarget) {
+	g.mu.Lock()
+	g.fixedTargets = targets
+	g.mu.Unlock()
+}
+
+// ClearFixedTargets removes fixed targets, returning to random mode.
+func (g *EventGenerator) ClearFixedTargets() {
+	g.mu.Lock()
+	g.fixedTargets = nil
+	g.mu.Unlock()
+}
+
+// FixedTargets returns the current fixed targets (nil if random mode).
+func (g *EventGenerator) FixedTargets() []FixedTarget {
+	g.mu.RLock()
+	defer g.mu.RUnlock()
+	return g.fixedTargets
 }

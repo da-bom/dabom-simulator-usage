@@ -23,3 +23,9 @@ type Family struct {
 	ID      int64
 	Members []int64
 }
+
+// FixedTarget represents a fixed family/customer pair for targeted event generation.
+type FixedTarget struct {
+	FamilyID    int64   `json:"familyId" yaml:"familyId"`
+	CustomerIDs []int64 `json:"customerIds" yaml:"customerIds"`
+}

@@ -96,10 +96,11 @@ func (s *Simulator) Status() StatusResponse {
 	defer s.mu.RUnlock()
 
 	resp := StatusResponse{
-		Running:   s.running,
-		Mode:      s.config.Simulation.Mode,
-		CurrentTPS: s.limiter.TPS(),
-		TargetTPS:  s.limiter.TPS(),
+		Running:          s.running,
+		Mode:             s.config.Simulation.Mode,
+		CurrentTPS:       s.limiter.TPS(),
+		TargetTPS:        s.limiter.TPS(),
+		FixedTargetCount: len(s.generator.FixedTargets()),
 	}
 
 	if s.pool != nil {
@@ -162,6 +163,23 @@ func (s *Simulator) Config() *config.Config {
 	return s.config
 }
 
+// SetFixedTargets sets fixed targets on the generator.
+func (s *Simulator) SetFixedTargets(targets []generator.FixedTarget) {
+	s.generator.SetFixedTargets(targets)
+	slog.Info("fixed targets updated", "count", len(targets))
+}
+
+// ClearFixedTargets removes fixed targets, returning to random mode.
+func (s *Simulator) ClearFixedTargets() {
+	s.generator.ClearFixedTargets()
+	slog.Info("fixed targets cleared")
+}
+
+// FixedTargets returns the current fixed targets.
+func (s *Simulator) FixedTargets() []generator.FixedTarget {
+	return s.generator.FixedTargets()
+}
+
 func (s *Simulator) applyPattern() {
 	cfg := s.config.Simulation
 	var pattern ratelimit.LoadPattern
@@ -199,6 +217,8 @@ func NewServer(sim *Simulator, port int) *http.Server {
 	mux.HandleFunc("PUT /config/tps", h.UpdateTPS)
 	mux.HandleFunc("PUT /config/mode", h.UpdateMode)
 	mux.HandleFunc("PUT /config/burst", h.UpdateBurst)
+	mux.HandleFunc("PUT /config/fixed-targets", h.UpdateFixedTargets)
+	mux.HandleFunc("DELETE /config/fixed-targets", h.ClearFixedTargets)
 	mux.HandleFunc("POST /control/start", h.ControlStart)
 	mux.HandleFunc("POST /control/stop", h.ControlStop)
 	mux.HandleFunc("POST /control/burst", h.ControlBurst)
@@ -219,6 +239,18 @@ func InitSimulator(cfg *config.Config, prod producer.Producer) *Simulator {
 		"families", reg.Count(),
 		"members", reg.TotalMembers(),
 	)
+
+	if len(cfg.Simulation.FixedTargets) > 0 {
+		targets := make([]generator.FixedTarget, len(cfg.Simulation.FixedTargets))
+		for i, ft := range cfg.Simulation.FixedTargets {
+			targets[i] = generator.FixedTarget{
+				FamilyID:    ft.FamilyID,
+				CustomerIDs: ft.CustomerIDs,
+			}
+		}
+		gen.SetFixedTargets(targets)
+		slog.Info("fixed targets configured", "count", len(targets))
+	}
 
 	return NewSimulator(cfg, gen, prod)
 }
