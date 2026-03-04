@@ -28,12 +28,18 @@ type KafkaConfig struct {
 }
 
 type SimulationConfig struct {
-	Mode        string       `yaml:"mode"`
-	TPS         int          `yaml:"tps"`
-	WorkerCount int          `yaml:"workerCount"`
-	Families    FamilyConfig `yaml:"families"`
-	RampUp      RampUpConfig `yaml:"rampUp"`
-	Burst       BurstConfig  `yaml:"burst"`
+	Mode         string              `yaml:"mode"`
+	TPS          int                 `yaml:"tps"`
+	WorkerCount  int                 `yaml:"workerCount"`
+	Families     FamilyConfig        `yaml:"families"`
+	RampUp       RampUpConfig        `yaml:"rampUp"`
+	Burst        BurstConfig         `yaml:"burst"`
+	FixedTargets []FixedTargetConfig `yaml:"fixedTargets"`
+}
+
+type FixedTargetConfig struct {
+	FamilyID    int64   `yaml:"familyId"`
+	CustomerIDs []int64 `yaml:"customerIds"`
 }
 
 type FamilyConfig struct {

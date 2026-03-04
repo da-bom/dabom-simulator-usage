@@ -29,6 +29,12 @@ simulation:
     burstDurationSeconds: 5
     intervalSeconds: 30
 
+  # fixedTargets:              # 설정 시 해당 ID들로만 이벤트 생성 (랜덤 대체)
+  #   - familyId: 12345
+  #     customerIds: [100001, 100002, 100003]
+  #   - familyId: 67890
+  #     customerIds: [200001, 200002]
+
 server:
   controlPort: 8080
   metricsPort: 9090
