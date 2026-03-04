@@ -72,6 +72,13 @@ simulation:
     count: 1000           # 시뮬레이션할 가족 수
     maxMembers: 6         # 가족당 최대 구성원 수
 
+  # 고정 타겟 설정 시 해당 ID들로만 이벤트 생성 (랜덤 대체)
+  fixedTargets:
+    - familyId: 12345
+      customerIds: [100001, 100002, 100003]
+    - familyId: 67890
+      customerIds: [200001, 200002]
+
 server:
   controlPort: 8080       # HTTP 제어 API
   metricsPort: 9090       # Prometheus 메트릭
@@ -202,6 +209,31 @@ curl -X POST http://localhost:8080/control/burst \
 curl -X PUT http://localhost:8080/config/burst \
   -H "Content-Type: application/json" \
   -d '{"baseTps": 100, "burstTps": 500, "burstDurationSeconds": 5, "intervalSeconds": 30}'
+```
+
+### 고정 타겟 (Fixed Targets)
+
+특정 `familyId`/`customerId`로만 이벤트를 생성합니다. 설정하면 랜덤 시뮬레이션을 대체하고, 해제하면 랜덤 모드로 복귀합니다.
+
+```bash
+# 고정 타겟 설정 — 지정한 ID들로만 이벤트 생성
+curl -X PUT http://localhost:8080/config/fixed-targets \
+  -H "Content-Type: application/json" \
+  -d '{"targets": [{"familyId": 12345, "customerIds": [100001, 100002]}, {"familyId": 67890, "customerIds": [200001]}]}'
+
+# 고정 타겟 해제 — 랜덤 모드로 복귀
+curl -X DELETE http://localhost:8080/config/fixed-targets
+```
+
+설정 파일(`config.dev.yaml`)에서도 지정할 수 있습니다:
+
+```yaml
+simulation:
+  fixedTargets:
+    - familyId: 12345
+      customerIds: [100001, 100002, 100003]
+    - familyId: 67890
+      customerIds: [200001, 200002]
 ```
 
 ## Prometheus 메트릭
