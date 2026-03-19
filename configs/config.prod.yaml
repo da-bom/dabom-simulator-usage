@@ -9,6 +9,14 @@ kafka:
   compressionType: "lz4"
   maxBlockMs: 60000
 
+database:
+  enabled: false
+  host: "mysql"
+  port: 3306
+  user: "simulator"
+  password: ""
+  dbName: "dabom"
+
 simulation:
   mode: "constant"
   tps: 5000

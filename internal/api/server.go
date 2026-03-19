@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/dabom/simulator-usage/internal/config"
+	"github.com/dabom/simulator-usage/internal/database"
 	"github.com/dabom/simulator-usage/internal/generator"
 	"github.com/dabom/simulator-usage/internal/producer"
 	"github.com/dabom/simulator-usage/internal/ratelimit"
@@ -232,10 +233,17 @@ func NewServer(sim *Simulator, port int) *http.Server {
 // InitSimulator creates a fully wired Simulator from config.
 func InitSimulator(cfg *config.Config, prod producer.Producer) *Simulator {
 	rng := rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64()))
-	reg := generator.NewFamilyRegistry(cfg.Simulation.Families.Count, rng)
+
+	var reg *generator.FamilyRegistry
+	if cfg.Database.Enabled {
+		reg = loadFamiliesFromDB(cfg.Database, rng)
+	} else {
+		reg = generator.NewFamilyRegistry(cfg.Simulation.Families.Count, rng)
+	}
 	gen := generator.NewEventGenerator(reg, rng)
 
 	slog.Info("family registry initialized",
+		"source", familySource(cfg.Database.Enabled),
 		"families", reg.Count(),
 		"members", reg.TotalMembers(),
 	)
@@ -253,4 +261,33 @@ func InitSimulator(cfg *config.Config, prod producer.Producer) *Simulator {
 	}
 
 	return NewSimulator(cfg, gen, prod)
+}
+
+func loadFamiliesFromDB(dbCfg config.DatabaseConfig, rng *rand.Rand) *generator.FamilyRegistry {
+	db, err := database.Connect(dbCfg)
+	if err != nil {
+		slog.Error("failed to connect to database, falling back to generated families", "error", err)
+		return generator.NewFamilyRegistry(1000, rng)
+	}
+	defer db.Close()
+
+	families, err := database.LoadFamilies(context.Background(), db)
+	if err != nil {
+		slog.Error("failed to load families from database, falling back to generated families", "error", err)
+		return generator.NewFamilyRegistry(1000, rng)
+	}
+
+	if len(families) == 0 {
+		slog.Warn("no families found in database, falling back to generated families")
+		return generator.NewFamilyRegistry(1000, rng)
+	}
+
+	return generator.NewFamilyRegistryFromFamilies(families, rng)
+}
+
+func familySource(dbEnabled bool) string {
+	if dbEnabled {
+		return "database"
+	}
+	return "generated"
 }

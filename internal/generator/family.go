@@ -23,6 +23,14 @@ var familySizeDist = []struct {
 }
 // 6-10 person families get the remaining 5%
 
+// NewFamilyRegistryFromFamilies creates a registry from pre-built families (e.g. loaded from DB).
+func NewFamilyRegistryFromFamilies(families []Family, rng *rand.Rand) *FamilyRegistry {
+	return &FamilyRegistry{
+		families: families,
+		rng:      rng,
+	}
+}
+
 // NewFamilyRegistry creates a registry with the given number of families.
 func NewFamilyRegistry(count int, rng *rand.Rand) *FamilyRegistry {
 	families := make([]Family, count)

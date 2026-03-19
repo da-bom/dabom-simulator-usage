@@ -11,9 +11,19 @@ import (
 
 type Config struct {
 	Kafka      KafkaConfig      `yaml:"kafka"`
+	Database   DatabaseConfig   `yaml:"database"`
 	Simulation SimulationConfig `yaml:"simulation"`
 	Server     ServerConfig     `yaml:"server"`
 	Logging    LoggingConfig    `yaml:"logging"`
+}
+
+type DatabaseConfig struct {
+	Enabled  bool   `yaml:"enabled"`
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	User     string `yaml:"user"`
+	Password string `yaml:"password"`
+	DBName   string `yaml:"dbName"`
 }
 
 type KafkaConfig struct {
@@ -109,5 +119,23 @@ func applyEnvOverrides(cfg *Config) {
 	}
 	if v := os.Getenv("LOG_LEVEL"); v != "" {
 		cfg.Logging.Level = v
+	}
+	if v := os.Getenv("DB_ENABLED"); v == "true" {
+		cfg.Database.Enabled = true
+	}
+	if v := os.Getenv("DB_HOST"); v != "" {
+		cfg.Database.Host = v
+	}
+	if v, err := strconv.Atoi(os.Getenv("DB_PORT")); err == nil {
+		cfg.Database.Port = v
+	}
+	if v := os.Getenv("DB_USER"); v != "" {
+		cfg.Database.User = v
+	}
+	if v := os.Getenv("DB_PASSWORD"); v != "" {
+		cfg.Database.Password = v
+	}
+	if v := os.Getenv("DB_NAME"); v != "" {
+		cfg.Database.DBName = v
 	}
 }
