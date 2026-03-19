@@ -96,6 +96,13 @@ func (wp *WorkerPool) run(ctx context.Context, id int) {
 		}
 
 		wp.published.Add(1)
+		slog.Debug("kafka message sent",
+			"eventId", env.EventID,
+			"familyId", env.Payload.FamilyID,
+			"customerId", env.Payload.CustomerID,
+			"appId", env.Payload.AppID,
+			"bytesUsed", env.Payload.BytesUsed,
+		)
 	}
 }
 
