@@ -52,8 +52,8 @@ func TestGenerateBytesUsed_VideoRange(t *testing.T) {
 	rng := rand.New(rand.NewPCG(42, 0))
 	for i := 0; i < 1000; i++ {
 		b := GenerateBytesUsed(rng, "com.youtube.app")
-		if b < 10*int64(MB) || b > 50*int64(MB) {
-			t.Errorf("bytesUsed = %d, want [%d, %d]", b, 10*int64(MB), 50*int64(MB))
+		if b < 100*int64(MB) || b > 500*int64(MB) {
+			t.Errorf("bytesUsed = %d, want [%d, %d]", b, 100*int64(MB), 500*int64(MB))
 		}
 	}
 }
@@ -62,8 +62,8 @@ func TestGenerateBytesUsed_MessengerRange(t *testing.T) {
 	rng := rand.New(rand.NewPCG(42, 0))
 	for i := 0; i < 1000; i++ {
 		b := GenerateBytesUsed(rng, "com.kakao.talk")
-		if b < 100*int64(KB) || b > 2*int64(MB) {
-			t.Errorf("bytesUsed = %d, want [%d, %d]", b, 100*int64(KB), 2*int64(MB))
+		if b < 1000*int64(KB) || b > 20*int64(MB) {
+			t.Errorf("bytesUsed = %d, want [%d, %d]", b, 1000*int64(KB), 20*int64(MB))
 		}
 	}
 }
