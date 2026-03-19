@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/go-sql-driver/mysql"
 
 	"github.com/dabom/simulator-usage/internal/config"
 	"github.com/dabom/simulator-usage/internal/generator"
@@ -14,9 +14,24 @@ import (
 
 // Connect opens a MySQL connection using the given config.
 func Connect(cfg config.DatabaseConfig) (*sql.DB, error) {
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=true",
-		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.DBName,
+	mysqlCfg := mysql.Config{
+		User:                 cfg.User,
+		Passwd:               cfg.Password,
+		Net:                  "tcp",
+		Addr:                 fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
+		DBName:               cfg.DBName,
+		ParseTime:            true,
+		AllowNativePasswords: true,
+	}
+	dsn := mysqlCfg.FormatDSN()
+
+	slog.Info("connecting to database",
+		"host", cfg.Host,
+		"port", cfg.Port,
+		"user", cfg.User,
+		"dbName", cfg.DBName,
 	)
+
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("open database: %w", err)
@@ -25,6 +40,7 @@ func Connect(cfg config.DatabaseConfig) (*sql.DB, error) {
 		db.Close()
 		return nil, fmt.Errorf("ping database: %w", err)
 	}
+	slog.Info("database connected successfully")
 	return db, nil
 }
 
