@@ -34,6 +34,7 @@ func LoadFamilies(ctx context.Context, db *sql.DB) ([]generator.Family, error) {
 		SELECT fm.family_id, fm.customer_id
 		FROM family_member fm
 		JOIN family f ON f.id = fm.family_id AND f.deleted_at IS NULL
+		JOIN customer c ON c.id = fm.customer_id AND c.deleted_at IS NULL
 		WHERE fm.deleted_at IS NULL
 		ORDER BY fm.family_id, fm.customer_id
 	`
