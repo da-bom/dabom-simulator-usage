@@ -8,6 +8,7 @@ DABOM 플랫폼의 데이터 사용량 이벤트를 시뮬레이션하여 Kafka�
 
 - Go 1.24+
 - Kafka 브로커 (Apache Kafka 3.x)
+- MySQL (DB 모드 사용 시)
 - Docker / Docker Compose (컨테이너 실행 시)
 
 ## 빌드
@@ -62,6 +63,14 @@ docker run --rm \
 kafka:
   brokers: ["localhost:9092"]
   topic: "usage-events"
+
+database:
+  enabled: false            # true로 설정 시 DB 모드 활성화
+  host: "localhost"
+  port: 3306
+  user: "root"
+  password: ""
+  dbName: "dabom"
 
 simulation:
   mode: "constant"        # constant | ramp-up | burst | realistic
@@ -236,6 +245,48 @@ simulation:
       customerIds: [200001, 200002]
 ```
 
+## DB 모드
+
+기본적으로 시뮬레이터는 Family/Customer 데이터를 랜덤 생성하지만, DB 모드를 활성화하면 MySQL에서 실제 `family`, `family_member` 테이블의 데이터를 조회하여 이벤트를 생성합니다.
+
+### 활성화 방법
+
+설정 파일에서 `database.enabled`를 `true`로 변경합니다:
+
+```yaml
+database:
+  enabled: true
+  host: "localhost"
+  port: 3306
+  user: "root"
+  password: "password"
+  dbName: "dabom"
+```
+
+또는 환경변수로 오버라이드할 수 있습니다:
+
+```bash
+DB_ENABLED=true DB_HOST=localhost DB_PORT=3306 DB_USER=root DB_PASSWORD=password DB_NAME=dabom \
+  go run ./cmd/simulator -config configs/config.dev.yaml
+```
+
+### 환경변수 목록
+
+| 환경변수 | 설정 파일 경로 | 설명 |
+|---|---|---|
+| `DB_ENABLED` | `database.enabled` | `true`로 설정 시 DB 모드 활성화 |
+| `DB_HOST` | `database.host` | MySQL 호스트 |
+| `DB_PORT` | `database.port` | MySQL 포트 |
+| `DB_USER` | `database.user` | MySQL 사용자 |
+| `DB_PASSWORD` | `database.password` | MySQL 비밀번호 |
+| `DB_NAME` | `database.dbName` | 데이터베이스 이름 |
+
+### 동작 방식
+
+- 시뮬레이터 시작 시 `family` + `family_member` 테이블을 조회하여 Family/Customer 매핑을 구성합니다
+- 이후 이벤트 생성 시 조회된 실제 데이터를 기반으로 familyId, customerId를 선택합니다
+- DB 연결 실패 또는 데이터가 없는 경우 자동으로 랜덤 생성 모드로 fallback됩니다
+
 ## Prometheus 메트릭
 
 `localhost:9090/metrics`에서 Prometheus 형식으로 수집 가능합니다.
@@ -274,6 +325,7 @@ configs/
 internal/
   api/                          # HTTP 제어 API, Simulator 오케스트레이션
   config/                       # 설정 로드
+  database/                     # MySQL 연결, Family/Customer 조회 (DB 모드)
   generator/                    # 가족/이벤트 생성
   metrics/                      # Prometheus 메트릭
   producer/                     # Kafka 프로듀서, 워커 풀
