@@ -1,7 +1,10 @@
 package generator
 
 import (
+	"fmt"
 	"math/rand/v2"
+	"os"
+	"time"
 )
 
 // FamilyRegistry holds pre-generated families and provides random selection.
@@ -78,6 +81,29 @@ func (fr *FamilyRegistry) RandomFamily() *Family {
 func (fr *FamilyRegistry) RandomMember(f *Family) int64 {
 	idx := fr.rng.IntN(len(f.Members))
 	return f.Members[idx]
+}
+
+// DumpToFile writes all family-customer mappings to a log file for verification.
+func (fr *FamilyRegistry) DumpToFile(path string, source string) error {
+	f, err := os.Create(path)
+	if err != nil {
+		return fmt.Errorf("create dump file: %w", err)
+	}
+	defer f.Close()
+
+	fmt.Fprintf(f, "# Family Registry Dump\n")
+	fmt.Fprintf(f, "# Generated at: %s\n", time.Now().Format(time.RFC3339))
+	fmt.Fprintf(f, "# Source: %s\n", source)
+	fmt.Fprintf(f, "# Total families: %d\n", len(fr.families))
+	fmt.Fprintf(f, "# Total members: %d\n", fr.TotalMembers())
+	fmt.Fprintf(f, "#\n")
+	fmt.Fprintf(f, "# format: familyId -> [customerId, ...]\n\n")
+
+	for _, fam := range fr.families {
+		fmt.Fprintf(f, "familyId=%d -> members=%v\n", fam.ID, fam.Members)
+	}
+
+	return nil
 }
 
 // Count returns the number of families in the registry.

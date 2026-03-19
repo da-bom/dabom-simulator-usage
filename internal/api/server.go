@@ -242,11 +242,19 @@ func InitSimulator(cfg *config.Config, prod producer.Producer) *Simulator {
 	}
 	gen := generator.NewEventGenerator(reg, rng)
 
+	source := familySource(cfg.Database.Enabled)
 	slog.Info("family registry initialized",
-		"source", familySource(cfg.Database.Enabled),
+		"source", source,
 		"families", reg.Count(),
 		"members", reg.TotalMembers(),
 	)
+
+	dumpPath := "family_registry.log"
+	if err := reg.DumpToFile(dumpPath, source); err != nil {
+		slog.Error("failed to dump family registry", "error", err)
+	} else {
+		slog.Info("family registry dumped", "path", dumpPath)
+	}
 
 	if len(cfg.Simulation.FixedTargets) > 0 {
 		targets := make([]generator.FixedTarget, len(cfg.Simulation.FixedTargets))
